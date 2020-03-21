@@ -22,12 +22,12 @@ TOOLCHAIN_TARGET="native"
 inherit toolchain python
 
 NAME="gcc"
-VERSION=8.3.0
+VERSION=9.3.0
 RELEASE=1
 CATEGORY="Devel"
 SUMMARY="GNU Compiler Collection"
 DESCRIPTION="The GNU Compiler Collection includes front ends for C, C++,
-Objective-C, Fortran, Ada, and Go, as well as libraries for these
+Objective-C, Fortran, and Go, as well as libraries for these
 languages (libstdc++, libgcj,...)."
 HOMEPAGE="http://gcc.gnu.org/"
 case ${VERSION} in
@@ -44,19 +44,18 @@ PATCH_URI="
 0011-add-dummy-pthread-tsaware-and-large-address-aware-fo.patch
 0012-handle-dllimport-properly-in-medium-model-V2.patch
 0013-skip-test-for-cygwin-mingw.patch
-0014-64bit-Cygwin-uses-SEH.patch
 0015-define-RTS_CONTROL_ENABLE-and-DTR_CONTROL_ENABLE-for.patch
 0016-fix-some-implicit-declaration-warnings.patch
 0017-__cxa-atexit-for-Cygwin.patch
 0018-prevent-modules-from-being-unloaded-before-their-dto.patch
-0020-cygwin-uses-cyg-lib-prefix-v3.patch
 0022-libgomp-soname-cygwin-mingw.patch
-0024-libitm-weak-symbols.patch
 0028-g++-time.patch
 0030-newlib-ftm.patch
 0031-define_std-unix.patch
-0032-fix-ada-malloc-error.patch
 "
+#0032-fix-ada-malloc-error.patch
+#0020-cygwin-uses-cyg-lib-prefix-v3.patch
+#0024-libitm-weak-symbols.patch
 
 # new files created by patches, need to be removed if re-prep'ing
 DISTCLEANFILES="config/mt-cygwin gcc/ada/system-cygwin-x86_64.ads libgomp/config/cygwin/plugin-suffix.h"
@@ -64,7 +63,7 @@ DISTCLEANFILES="config/mt-cygwin gcc/ada/system-cygwin-x86_64.ads libgomp/config
 # These must not be set in the environment, but main cygport
 # script tries to be too helpful here and confuses auto-detection
 # process during gcc build stages.
-unset CC CXX F77 FC GCJ GOC OBJC OBJCXX
+unset CC CXX F77 FC GCJ GOC OBJC OBJCXX FCFLAGS FFLAGS CFLAGS CXXFLAGS
 
 CYGPORT_USE_UNSTABLE_API=1
 src_unpack_hook() {
@@ -83,13 +82,11 @@ CYGCONF_ARGS="
 	--with-dwarf2
 	${ARCH_i686+--with-arch=i686} --with-tune=generic
 	${ARCH_i686+--disable-sjlj-exceptions}
-	${ARCH_i686+--enable-languages=c,c++,fortran,lto,objc,obj-c++}
-	${ARCH_x86_64+--enable-languages=ada,c,c++,fortran,lto,objc,obj-c++}
+	--enable-languages=c,c++,fortran,lto,objc,obj-c++
 	--enable-graphite
 	--enable-threads=posix
 	--enable-libatomic
 	--enable-libgomp
-	--enable-libitm
 	--enable-libquadmath
 	--enable-libquadmath-support
 	--disable-libssp
@@ -216,11 +213,13 @@ _EOF
 
 KEEP_LA_FILES="none"
 
-PKG_NAMES="${NAME}-core ${NAME}-g++ ${NAME}-fortran ${ARCH_x86_64+${NAME}-ada} ${NAME}-objc ${NAME}-objc++"
-PKG_NAMES+=" libatomic1 libgcc1 libgomp1 libgfortran5 ${ARCH_x86_64+libgnat8} libobjc4 libstdc++6 libquadmath0"
+PKG_NAMES="${NAME}-core ${NAME}-g++ ${NAME}-fortran ${NAME}-objc ${NAME}-objc++"
+PKG_NAMES+=" libatomic1 libgcc1 libgomp1 libgfortran5 libobjc4 libstdc++6 libquadmath0"
+#  ${ARCH_x86_64+${NAME}-ada} ${ARCH_x86_64+libgnat8}
 gcc_REQUIRES="${NAME}-core ${NAME}-g++"
 gcc_core_SUMMARY="${SUMMARY} (C, OpenMP)"
 gcc_core_REQUIRES="binutils cygwin-devel w32api-headers w32api-runtime windows-default-manifest"
+gcc_core_OBSOLETES="${NAME}-ada ${NAME}-cilkplus"
 gcc_core_CONTENTS="--exclude=jni*.h
     usr/bin/cc \
     usr/bin/c89 \
@@ -249,7 +248,6 @@ gcc_core_CONTENTS="--exclude=jni*.h
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/libgcc* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/libgcov.* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/libgomp.* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/libitm.* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/libquadmath.* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${VERSION/-*/.*}/lto*.exe \
     usr/share/doc/${NAME}/ \
@@ -259,7 +257,6 @@ gcc_core_CONTENTS="--exclude=jni*.h
     usr/share/info/gccinstall.info* \
     usr/share/info/gccint.info* \
     usr/share/info/libgomp.info* \
-    usr/share/info/libitm.info* \
     usr/share/info/libquadmath.info*
     usr/share/locale/* \
     usr/share/man/man1/cpp.1* \
