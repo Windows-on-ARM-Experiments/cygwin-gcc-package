@@ -52,10 +52,11 @@ PATCH_URI="
 0028-g++-time.patch
 0030-newlib-ftm.patch
 0031-define_std-unix.patch
+0032-libstdc-use-lt_host_flags-for-libstdc-.la.patch
+0033-libstdc-regenerate-src-Makefile.in-for-lt_host_flags.patch
+0034-libstdc-use-a-link-test-to-test-for-Wl-z-relro.patch
+0035-libstdc-regenerate-configure.patch
 "
-#0032-fix-ada-malloc-error.patch
-#0020-cygwin-uses-cyg-lib-prefix-v3.patch
-#0024-libitm-weak-symbols.patch
 
 # new files created by patches, need to be removed if re-prep'ing
 DISTCLEANFILES="config/mt-cygwin gcc/ada/system-cygwin-x86_64.ads libgomp/config/cygwin/plugin-suffix.h"
