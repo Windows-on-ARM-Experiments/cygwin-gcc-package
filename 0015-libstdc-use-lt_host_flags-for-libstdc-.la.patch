@@ -1,7 +1,7 @@
-From 12c2962dd64b191bb3b6f335ca0e57fdfb003cc7 Mon Sep 17 00:00:00 2001
+From 4ba039687182fccd67e1170f89e259e1c4a58eeb Mon Sep 17 00:00:00 2001
 From: Jonathan Yong <10walls@gmail.com>
 Date: Sun, 22 Mar 2020 09:56:58 +0800
-Subject: [PATCH 32/35] libstdc++: use lt_host_flags for libstdc++.la
+Subject: [PATCH 15/18] libstdc++: use lt_host_flags for libstdc++.la
 
 Signed-off-by: Jonathan Yong <10walls@gmail.com>
 ---
@@ -9,7 +9,7 @@ Signed-off-by: Jonathan Yong <10walls@gmail.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/libstdc++-v3/src/Makefile.am b/libstdc++-v3/src/Makefile.am
-index 8511a30..fee5aaf 100644
+index a139adc81b3..498f533f3d3 100644
 --- a/libstdc++-v3/src/Makefile.am
 +++ b/libstdc++-v3/src/Makefile.am
 @@ -107,7 +107,7 @@ libstdc___la_DEPENDENCIES = \
@@ -22,5 +22,5 @@ index 8511a30..fee5aaf 100644
  # Use special rules for compatibility-ldbl.cc compilation, as we need to
  # pass -mlong-double-64.
 -- 
-2.21.0
+2.28.0
 

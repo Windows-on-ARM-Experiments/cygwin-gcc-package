@@ -38,28 +38,27 @@ case ${VERSION} in
 *)	SRC_URI="mirror://gnu/gcc/gcc-${VERSION}/gcc-${VERSION}.tar.xz" ;;
 esac
 SRC_DIR="gcc-${VERSION}"
+# patches re-created in git branch cygwin-10.2.0
 PATCH_URI="
-0007-Avoid-installing-libffi-V2.patch
-0009-Cygwin-uses-sysv-ABI-on-x86_64-V2.patch
-0010-Do-not-version-lto-plugin-on-cygwin-mingw.patch
-0011-add-dummy-pthread-tsaware-and-large-address-aware-fo.patch
-0012-handle-dllimport-properly-in-medium-model-V2.patch
-0013-skip-test-for-cygwin-mingw.patch
-0015-define-RTS_CONTROL_ENABLE-and-DTR_CONTROL_ENABLE-for.patch
-0016-fix-some-implicit-declaration-warnings.patch
-0017-__cxa-atexit-for-Cygwin.patch
-0018-prevent-modules-from-being-unloaded-before-their-dto.patch
-0022-libgomp-soname-cygwin-mingw.patch
-0028-g++-time.patch
-0030-newlib-ftm.patch
-0031-define_std-unix.patch
-0032-libstdc-use-lt_host_flags-for-libstdc-.la.patch
-0033-libstdc-regenerate-src-Makefile.in-for-lt_host_flags.patch
-0034-libstdc-use-a-link-test-to-test-for-Wl-z-relro.patch
-0035-libstdc-regenerate-configure.patch
+0001-Cygwin-avoid-installing-libffi-V2.patch
+0002-Cygwin-use-SysV-ABI-on-x86_64.patch
+0003-Cygwin-MinGW-Do-not-version-lto-plugins.patch
+0004-Cygwin-add-dummy-pthread-tsaware-and-large-address-a.patch
+0005-Cygwin-handle-dllimport-properly-in-medium-model-V2.patch
+0006-Cygwin-MinGW-skip-test.patch
+0007-Cygwin-define-RTS_CONTROL_ENABLE-and-DTR_CONTROL_ENA.patch
+0008-Cygwin-fix-some-implicit-declaration-warnings.patch
+0009-Cygwin-__cxa-atexit.patch
+0010-Cygwin-prevent-modules-from-being-unloaded-before-th.patch
+0011-Cygwin-libgomp-soname.patch
+0012-Cygwin-g-time.patch
+0013-Cygwin-newlib-ftm.patch
+0014-Cygwin-define-STD_UNIX.patch
+0015-libstdc-use-lt_host_flags-for-libstdc-.la.patch
+0016-libstdc-regenerate-src-Makefile.in-for-lt_host_flags.patch
+0017-libstdc-use-a-link-test-to-test-for-Wl-z-relro.patch
+0018-libstdc-regenerate-configure.patch
 "
-# 0001-share-mingw-fset-stack-executable-with-cygwin.patch
-# ltmain.patch
 
 # new files created by patches, need to be removed if re-prep'ing
 DISTCLEANFILES="config/mt-cygwin gcc/ada/system-cygwin-x86_64.ads libgomp/config/cygwin/plugin-suffix.h"

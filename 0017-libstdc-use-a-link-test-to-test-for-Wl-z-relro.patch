@@ -1,7 +1,7 @@
-From 5d7541c13423bfc7457400dd9b48c92ec46dac96 Mon Sep 17 00:00:00 2001
+From 1b20e03e7468760828bfc70fc5e811b5b3738adf Mon Sep 17 00:00:00 2001
 From: Jonathan Yong <10walls@gmail.com>
 Date: Sun, 22 Mar 2020 09:59:37 +0800
-Subject: [PATCH 34/35] libstdc++: use a link test to test for -Wl,-z,relro
+Subject: [PATCH 17/18] libstdc++: use a link test to test for -Wl,-z,relro
 
 Do a link test instead of just a grep. The linker can
 support multiple targets, but not all targets can use it.
@@ -12,7 +12,7 @@ Signed-off-by: Jonathan Yong <10walls@gmail.com>
  1 file changed, 10 insertions(+), 1 deletion(-)
 
 diff --git a/libstdc++-v3/acinclude.m4 b/libstdc++-v3/acinclude.m4
-index 192ecab..d5e0e5e 100644
+index bc7d137dc74..209aa3a91f3 100644
 --- a/libstdc++-v3/acinclude.m4
 +++ b/libstdc++-v3/acinclude.m4
 @@ -274,7 +274,16 @@ AC_DEFUN([GLIBCXX_CHECK_LINKER_FEATURES], [
@@ -34,5 +34,5 @@ index 192ecab..d5e0e5e 100644
        OPT_LDFLAGS="-Wl,-z,relro"
        ac_ld_relro=yes
 -- 
-2.21.0
+2.28.0
 
