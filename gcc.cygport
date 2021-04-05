@@ -24,21 +24,26 @@ TOOLCHAIN_TARGET="native"
 inherit toolchain python
 
 NAME="gcc"
-VERSION="10.2.0"
-RELEASE="1"
+VERSION="10.3.0-RC-20210401"
+RELEASE="0.1"
 CATEGORY="Devel"
 SUMMARY="GNU Compiler Collection"
 DESCRIPTION="The GNU Compiler Collection includes front ends for C, C++,
 Objective-C, Fortran, and Go, as well as libraries for these
 languages (libstdc++, libgcj,...)."
-HOMEPAGE="http://gcc.gnu.org/"
+HOMEPAGE="https://gcc.gnu.org/"
 GFMABI="15"
 PVmaj=${PV%%.*}
 case ${PV} in
 *-20[1-9][0-9][0-1][0-9][0-3][0-9]) # snapshot
-    SRC_URI="mirror://gcc/snapshots/${PV}/gcc-${PV}.tar.xz" ;;
+    SRC_URI="  mirror://gcc/snapshots/${PV}/gcc-${PV}.tar.xz"
+    SRC_URI+=" mirror://gcc/snapshots/${PV}/sha512.sum#/gcc-${PV}.tar.xz.sha512"
+    ;;
 *)                                  # release
-    SRC_URI="mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz" ;;
+    SRC_URI="  mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz"
+    SRC_URI+=" mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz.sig"
+    SRC_URI+=" mirror://gnu/gcc/gcc-${PV}/sha512.sum#/gcc-${PV}.tar.xz.sha512"
+    ;;
 esac
 SRC_DIR="gcc-${PV}"
 # patches re-created in git branch cygwin-10.2.0
@@ -62,6 +67,15 @@ PATCH_URI="
 0017-libstdc-use-a-link-test-to-test-for-Wl-z-relro.patch
 0018-libstdc-regenerate-configure.patch
 "
+#DISABLE_BOOTSTRAP
+defined DISABLE_BOOTSTRAP &&
+    inform "Disable Bootstrapping."
+#LIBGCCJIT=1
+if defined LIBGCCJIT
+then
+    PATCH_URI+=" 0101-Cygwin-libgccjit.patch"
+    inform "Experimental support for libgccjit activated."
+fi
 
 # CI hints
 SCALLYWAG="nobuild notest nodeploy"
@@ -92,7 +106,8 @@ CYGCONF_ARGS="
 	--with-dwarf2
 	${ARCH_i686+--with-arch=i686} --with-tune=generic
 	${ARCH_i686+--disable-sjlj-exceptions}
-	--enable-languages=c,c++,fortran,lto,objc,obj-c++
+	${DISABLE_BOOTSTRAP+--disable-bootstrap}
+	--enable-languages=c,c++,fortran,lto,objc,obj-c++${LIBGCCJIT+,jit}
 	--enable-graphite
 	--enable-threads=posix
 	--enable-libatomic
@@ -111,6 +126,8 @@ CYGCONF_ARGS="
 	--with-default-libstdcxx-abi=gcc4-compatible
 	--enable-libstdcxx-filesystem-ts
 "
+
+MAKEOPTS+=" -Otarget"
 
 src_compile() {
 	cd ${B}
@@ -132,7 +149,9 @@ src_compile() {
 	export CFLAGS=${___CFLAGS}
 	export CXXFLAGS=${___CXXFLAGS}
 
-	cygconf # CYGCONF_ARGS defined above
+	# parallel make encounters problems frequently
+	defined CYGPORT_RECOMPILE && echo recompile only ||
+	  cygconf # CYGCONF_ARGS defined above
 	cygmake BOOT_CFLAGS="${CXXFLAGS}"
 }
 
@@ -151,8 +170,9 @@ src_test() {
 	gccpath+="${B}/${TOOLCHAIN_TARGET}/libstdc++-v3/src/.libs:"
 
 	cd ${B}
+	# cygtest doesn't work since btest_gnudebuglink has no creation rule
 	PATH="${gccpath}${PATH}" \
-	cygtest
+	make ${MAKEOPTS} -k check || true
 }
 
 src_install() {
@@ -226,6 +246,8 @@ KEEP_LA_FILES="none"
 PKG_NAMES="${PN}-core ${PN}-g++ ${PN}-fortran ${PN}-objc ${PN}-objc++"
 PKG_NAMES+=" libatomic1 libgcc1 libgomp1 libgfortran5 libobjc4 libstdc++6 libquadmath0"
 #  ${ARCH_x86_64+${PN}-ada} ${ARCH_x86_64+libgnat8}
+defined LIBGCCJIT &&
+    PKG_NAMES+=" libgccjit0"
 gcc_REQUIRES="${PN}${PVmaj} ${PN}-g++"
 gcc_core_SUMMARY="${SUMMARY} (C, OpenMP)"
 gcc_core_REQUIRES="binutils cygwin-devel w32api-headers w32api-runtime windows-default-manifest"
@@ -373,3 +395,15 @@ libvtv0_CATEGORY="Libs"
 libvtv0_SUMMARY="GCC vtable verification library"
 libvtv0_CONTENTS="usr/bin/cygvtv-0.dll usr/bin/cygvtv_stubs-0.dll"
 gcc_debuginfo_CONTENTS+=" usr/share/gcc-${PVmaj}/python/libstdcxx/"
+if defined LIBGCCJIT
+then
+    inform "Package libgccjit0 will be provided."
+    libgccjit0_CATEGORY="Libs"
+    libgccjit0_SUMMARY="GCC JIT runtime library, header files and documentation"
+    libgccjit0_CONTENTS="
+	usr/bin/cyggccjit-0.dll
+	usr/include/libgccjit*
+	usr/lib/libgccjit.dll.a
+	usr/share/info/libgccjit.info.gz
+"
+fi
