@@ -24,8 +24,8 @@ TOOLCHAIN_TARGET="native"
 inherit toolchain python
 
 NAME="gcc"
-VERSION="11.1.0-RC-20210423"
-RELEASE="0.1"
+VERSION="11.2.0"
+RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="GNU Compiler Collection"
 DESCRIPTION="The GNU Compiler Collection includes front ends for C, C++,
@@ -59,7 +59,7 @@ PATCH_URI="
   0010-Cygwin-newlib-ftm.patch
   0011-Cygwin-define-STD_UNIX.patch
 "
-#DISABLE_BOOTSTRAP
+#DISABLE_BOOTSTRAP=1
 defined DISABLE_BOOTSTRAP &&
     inform "Disable Bootstrapping."
 #LIBGCCJIT=1
@@ -169,8 +169,8 @@ src_test() {
     cd ${B}
     # cygtest doesn't work since btest_gnudebuglink has no creation rule
     [ "no" != "${CYGPORT_RUN_UNSTABLE_TESTS-no}" ] &&
-        PATH="${gccpath}${PATH}" \
-            make ${MAKEOPTS} -k check || true
+        PATH="${gccpath}${PATH}" make ${MAKEOPTS} -k check ||
+	    echo "Unstable test, set CYGPORT_RUN_UNSTABLE_TESTS to run."
 }
 
 src_install() {
@@ -310,10 +310,10 @@ gcc_g___CONTENTS="
     usr/bin/${TOOLCHAIN_TARGET}-c++.exe \
     usr/bin/${TOOLCHAIN_TARGET}-g++.exe \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1plus.exe \
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/g++-mapper-server.exe* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/c++ \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libstdc++* \
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libsupc++* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/g++-mapper-server.exe* \
     usr/share/man/man1/g++.1* \
 "
 gcc_fortran_SUMMARY="${SUMMARY} (Fortran)"
