@@ -24,7 +24,7 @@ TOOLCHAIN_TARGET="native"
 inherit toolchain python
 
 NAME="gcc"
-VERSION="11.2.0"
+VERSION="11.3.0"
 RELEASE="1"
 CATEGORY="Devel"
 SUMMARY="GNU Compiler Collection"
@@ -45,7 +45,7 @@ case ${PV} in
     ;;
 esac
 SRC_DIR="gcc-${PV}"
-# patches re-created in git branch cygwin-10.2.0
+# patches re-created in cygwin-gcc git branch cygwin-11.3.1
 PATCH_URI="
   0001-Cygwin-use-SysV-ABI-on-x86_64.patch
   0002-Cygwin-add-dummy-pthread-tsaware-and-large-address-a.patch
@@ -62,14 +62,16 @@ PATCH_URI="
 #DISABLE_BOOTSTRAP=1
 defined DISABLE_BOOTSTRAP &&
     inform "Disable Bootstrapping."
-#LIBGCCJIT=1
-if defined LIBGCCJIT
+LIBGCCJIT=1
+if defined DISABLE_LIBGCCJIT
 then
+    inform "Support for libgccjit disabled."
+else
     PATCH_URI+="
       0101-Cygwin-enable-libgccjit-not-just-for-MingW.patch
       0102-Cygwin-testsuite-fixes-for-libgccjit.patch
     "
-    inform "Experimental support for libgccjit activated."
+    inform "Support for libgccjit enabled."
 fi
 
 # CI hints
@@ -405,4 +407,5 @@ then
         usr/lib/libgccjit.dll.a
         usr/share/info/libgccjit.info.gz
 "
+    libgccjit0_REQUIRES="gcc-core"
 fi
