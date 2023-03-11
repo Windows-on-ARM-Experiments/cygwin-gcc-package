@@ -21,30 +21,33 @@ BUILD_REQUIRES=""
 #
 ################################################################################
 TOOLCHAIN_TARGET="native"
-inherit toolchain python
+inherit toolchain python3
 
 NAME="gcc"
-VERSION="11.3.0"
-RELEASE="1"
+VERSION="11.3.1+20230310"
+RELEASE="0.1"
 CATEGORY="Devel"
 SUMMARY="GNU Compiler Collection"
 DESCRIPTION="The GNU Compiler Collection includes front ends for C, C++,
 Objective-C, Fortran, and Go, as well as libraries for these
 languages (libstdc++, libgcj,...)."
 HOMEPAGE="https://gcc.gnu.org/"
+LICENSE="GPL-3.0-or-later"
 GFMABI="15"
 PVmaj=${PV%%.*}
 case ${PV} in
-*-20[1-9][0-9][0-1][0-9][0-3][0-9]) # snapshot
-    SRC_URI="  mirror://gcc/snapshots/${PV}/gcc-${PV}.tar.xz"
-    SRC_URI+=" mirror://gcc/snapshots/${PV}/sha512.sum#/gcc-${PV}.tar.xz.sha512"
-    ;;
-*)                                  # release
-    SRC_URI="  mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz"
-    SRC_URI+=" mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz.sig"
-    ;;
+    *+20[1-9][0-9][0-1][0-9][0-3][0-9]) # snapshot
+	SD=${PV##*+}
+	SRC_URI="  mirror://gcc/snapshots/${PVmaj}-${SD}/gcc-${PVmaj}-${SD}.tar.xz"
+	SRC_URI+=" mirror://gcc/snapshots/${PVmaj}-${SD}/sha512.sum#/gcc-${PVmaj}-${SD}.tar.xz.sha512"
+	SRC_DIR="gcc-${PVmaj}-${SD}"
+	;;
+    *)                                  # release
+	SRC_URI="  mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz"
+	SRC_URI+=" mirror://gnu/gcc/gcc-${PV}/gcc-${PV}.tar.xz.sig"
+	SRC_DIR="gcc-${PV}"
+	;;
 esac
-SRC_DIR="gcc-${PV}"
 # patches re-created in cygwin-gcc git branch cygwin-11.3.1
 PATCH_URI="
   0001-Cygwin-use-SysV-ABI-on-x86_64.patch
@@ -52,13 +55,14 @@ PATCH_URI="
   0003-Cygwin-handle-dllimport-properly-in-medium-model-V2.patch
   0004-Cygwin-MinGW-skip-test.patch
   0005-Cygwin-define-RTS_CONTROL_ENABLE-and-DTR_CONTROL_ENA.patch
-  0006-Cygwin-fix-some-implicit-declaration-warnings-and-re.patch
   0007-Cygwin-__cxa-atexit.patch
   0008-Cygwin-libgomp-soname.patch
   0009-Cygwin-g-time.patch
   0010-Cygwin-newlib-ftm.patch
   0011-Cygwin-define-STD_UNIX.patch
 "
+# already fixed in snapshot
+#  0006-Cygwin-fix-some-implicit-declaration-warnings-and-re.patch
 #DISABLE_BOOTSTRAP=1
 defined DISABLE_BOOTSTRAP &&
     inform "Disable Bootstrapping."
@@ -73,6 +77,10 @@ else
     "
     inform "Support for libgccjit enabled."
 fi
+# Ada
+PATCH_URI+="
+  0201-Cygwin-ada-shared-prefix.patch
+"
 
 # CI hints
 SCALLYWAG="nobuild notest nodeploy"
@@ -104,7 +112,7 @@ CYGCONF_ARGS="
     ${ARCH_i686+--with-arch=i686} --with-tune=generic
     ${ARCH_i686+--disable-sjlj-exceptions}
     ${DISABLE_BOOTSTRAP+--disable-bootstrap}
-    --enable-languages=c,c++,fortran,lto,objc,obj-c++${LIBGCCJIT+,jit}
+    --enable-languages=ada,c,c++,d,fortran,lto,objc,obj-c++${LIBGCCJIT+,jit}
     --enable-graphite
     --enable-threads=posix
     --enable-libatomic
@@ -114,6 +122,7 @@ CYGCONF_ARGS="
     --disable-libssp
     --enable-libada
     --disable-symvers
+    --disable-multilib
     --with-gnu-ld --with-gnu-as
     --with-cloog-include=$(${TOOLCHAIN_TARGET}-gcc -print-sysroot)/usr/include/cloog-isl
     --without-libiconv-prefix
@@ -197,7 +206,8 @@ src_install() {
     python_optimize /usr/share/gcc-${PVmaj}/python
 
     # Move ADA DLLs
-    #mv -v ${D}/usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adalib/cyg*.dll ${D}/usr/bin/
+    mv -v ${D}/usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adalib/cyggna*.dll ${D}/usr/bin/
+    # rename libgna cyggna ${D}/usr/bin/libgna*.dll
 
     # Now move docs to correct location
     mkdir -p ${D}/usr/share/doc/${PN}
@@ -243,128 +253,128 @@ _EOF
 
 KEEP_LA_FILES="none"
 
-PKG_NAMES="${PN}-core ${PN}-g++ ${PN}-fortran ${PN}-objc ${PN}-objc++"
-PKG_NAMES+=" libatomic1 libgcc1 libgomp1 libgfortran5 libobjc4 libstdc++6 libquadmath0"
-#  ${ARCH_x86_64+${PN}-ada} ${ARCH_x86_64+libgnat8}
+PKG_NAMES="${PN}-ada ${PN}-core ${PN}-g++ ${PN}-gdc ${PN}-fortran ${PN}-objc ${PN}-objc++"
+PKG_NAMES+=" libatomic1 libgcc1 libgfortran5 libgomp1 libgnat11 libobjc4 libstdc++6 libquadmath0"
 defined LIBGCCJIT &&
     PKG_NAMES+=" libgccjit0"
 gcc_REQUIRES="${PN}${PVmaj} ${PN}-g++"
+gcc_ada_SUMMARY="${SUMMARY} (Ada)"
+gcc_ada_REQUIRES="${PN}${PVmaj}"
+gcc_ada_CONTENTS="
+    usr/bin/gnat*.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/ada_target_properties
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adainclude
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adalib
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/gnat1.exe
+    usr/share/info/gnat-style.info*
+    usr/share/info/gnat_rm.info*
+    usr/share/info/gnat_ugn.info*
+"
 gcc_core_SUMMARY="${SUMMARY} (C, OpenMP)"
 gcc_core_REQUIRES="binutils cygwin-devel w32api-headers w32api-runtime windows-default-manifest"
 gcc_core_OBSOLETES="${PN}-ada ${PN}-cilkplus"
 gcc_core_PROVIDES="${PN}${PVmaj}"
-gcc_core_CONTENTS="--exclude=jni*.h
-    usr/bin/cc \
-    usr/bin/c89 \
-    usr/bin/c99 \
-    usr/bin/cpp.exe \
-    usr/bin/gcc.exe \
+gcc_core_CONTENTS="
+    --exclude=jni*.h
+    usr/bin/cc
+    usr/bin/c89
+    usr/bin/c99
+    usr/bin/cpp.exe
+    usr/bin/gcc.exe
     usr/bin/gcc-ar.exe
-    usr/bin/gcc-nm.exe \
-    usr/bin/gcc-ranlib.exe \
-    usr/bin/gcov.exe \
-    usr/bin/gcov-tool.exe \
-    usr/bin/gcov-dump.exe \
-    usr/bin/lto-dump.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gcc-${PVmaj}.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gcc.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gcc-ar.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gcc-nm.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gcc-ranlib.exe \
-    usr/lib/cpp \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/*.h \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/install-tools \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/collect2.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/crt*.o \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cyglto_plugin.dll \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libatomic.* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgcc* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgcov.* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgomp.* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libquadmath.* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/lto*.exe \
-    usr/share/doc/${PN}/ \
-    usr/share/info/cpp.info* \
-    usr/share/info/cppinternals.info* \
-    usr/share/info/gcc.info* \
-    usr/share/info/gccinstall.info* \
-    usr/share/info/gccint.info* \
-    usr/share/info/libgomp.info* \
+    usr/bin/gcc-nm.exe
+    usr/bin/gcc-ranlib.exe
+    usr/bin/gcov.exe
+    usr/bin/gcov-tool.exe
+    usr/bin/gcov-dump.exe
+    usr/bin/lto-dump.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gcc-${PVmaj}.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gcc.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gcc-ar.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gcc-nm.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gcc-ranlib.exe
+    usr/lib/cpp
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/*.h
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/install-tools
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/collect2.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/crt*.o
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cyglto_plugin.dll
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libatomic.*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgcc*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgcov.*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgomp.*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libquadmath.*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/lto*.exe
+    usr/share/doc/${PN}/
+    usr/share/info/cpp.info*
+    usr/share/info/cppinternals.info*
+    usr/share/info/gcc.info*
+    usr/share/info/gccinstall.info*
+    usr/share/info/gccint.info*
+    usr/share/info/libgomp.info*
     usr/share/info/libquadmath.info*
-    usr/share/locale/* \
-    usr/share/man/man1/cpp.1* \
-    usr/share/man/man1/gcc.1* \
-    usr/share/man/man1/gcov.1* \
-    usr/share/man/man1/gcov-dump.1.* \
-    usr/share/man/man1/gcov-tool.1.* \
-    usr/share/man/man1/lto-dump.1.* \
-    usr/share/man/man7/fsf-funding.7* \
-    usr/share/man/man7/gfdl.7* \
+    usr/share/locale/*
+    usr/share/man/man1/cpp.1*
+    usr/share/man/man1/gcc.1*
+    usr/share/man/man1/gcov.1*
+    usr/share/man/man1/gcov-dump.1.*
+    usr/share/man/man1/gcov-tool.1.*
+    usr/share/man/man1/lto-dump.1.*
+    usr/share/man/man7/fsf-funding.7*
+    usr/share/man/man7/gfdl.7*
     usr/share/man/man7/gpl.7*
 "
 gcc_g___SUMMARY="${SUMMARY} (C++)"
 gcc_g___REQUIRES="${PN}${PVmaj}"
 gcc_g___CONTENTS="
     --exclude=gnu
-    usr/bin/c++.exe \
-    usr/bin/g++.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-c++.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-g++.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1plus.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/g++-mapper-server.exe* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/c++ \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libstdc++* \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libsupc++* \
-    usr/share/man/man1/g++.1* \
+    usr/bin/c++.exe
+    usr/bin/g++.exe
+    usr/bin/${TOOLCHAIN_TARGET}-c++.exe
+    usr/bin/${TOOLCHAIN_TARGET}-g++.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1plus.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/g++-mapper-server.exe*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/c++
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libstdc++*
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libsupc++*
+    usr/share/man/man1/g++.1*
+"
+gcc_gdc_SUMMARY="${SUMMARY} (D)"
+gcc_gdc_REQUIRES="${PN}${PVmaj}"
+gcc_gdc_CONTENTS="
+    --exclude=gnu
+    usr/bin/gdc.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gdc.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/d21.exe
+    usr/share/info/gdc.info*
+    usr/share/man/man1/gdc.1*
 "
 gcc_fortran_SUMMARY="${SUMMARY} (Fortran)"
 gcc_fortran_REQUIRES="${PN}${PVmaj}"
 gcc_fortran_PROVIDES="gfm${GFMABI}" # GNU Fortran Module version
 gcc_fortran_CONTENTS="
-    usr/bin/f95 \
-    usr/bin/gfortran.exe \
-    usr/bin/${TOOLCHAIN_TARGET}-gfortran.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/finclude/ \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/f951.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libcaf_single.a \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgfortran* \
-    usr/share/info/gfortran.info* \
-    usr/share/man/man1/gfortran.1* \
+    usr/bin/f95
+    usr/bin/gfortran.exe
+    usr/bin/${TOOLCHAIN_TARGET}-gfortran.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/finclude/
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/f951.exe
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libcaf_single.a
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libgfortran*
+    usr/share/info/gfortran.info*
+    usr/share/man/man1/gfortran.1*
 "
 gcc_objc_SUMMARY="${SUMMARY} (Objective-C)"
 gcc_objc_REQUIRES="${PN}${PVmaj}"
 gcc_objc_CONTENTS="
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/objc/ \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1obj.exe \
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/include/objc/
+    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1obj.exe
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/libobjc.*
 "
 gcc_objc___SUMMARY="${SUMMARY} (Objective-C++)"
 gcc_objc___REQUIRES="${PN}${PVmaj} ${PN}-g++ ${PN}-objc"
 gcc_objc___CONTENTS="
     usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/cc1objplus.exe
-"
-gcc_ada_SUMMARY="${SUMMARY} (Ada)"
-gcc_ada_REQUIRES="${PN}${PVmaj}"
-gcc_ada_CONTENTS="
-    usr/bin/gnat.exe \
-    usr/bin/gnatbind.exe \
-    usr/bin/gnatchop.exe \
-    usr/bin/gnatclean.exe \
-    usr/bin/gnatfind.exe \
-    usr/bin/gnatkr.exe \
-    usr/bin/gnatlink.exe \
-    usr/bin/gnatls.exe \
-    usr/bin/gnatmake.exe \
-    usr/bin/gnatname.exe \
-    usr/bin/gnatprep.exe \
-    usr/bin/gnatxref.exe \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adainclude \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/adalib \
-    usr/lib/gcc/${TOOLCHAIN_TARGET}/${PVmaj}/gnat1.exe \
-    usr/share/info/gnat-style.info* \
-    usr/share/info/gnat_rm.info* \
-    usr/share/info/gnat_ugn.info* \
 "
 libatomic1_CATEGORY="Libs"
 libatomic1_SUMMARY="GCC C11/C++11 locked atomics runtime library"
@@ -375,9 +385,9 @@ libgcc1_CONTENTS="usr/bin/cyggcc_s${ARCH_x86_64+-seh}-1.dll"
 libgfortran5_CATEGORY="Libs"
 libgfortran5_SUMMARY="GCC Fortran runtime library"
 libgfortran5_CONTENTS="usr/bin/cyggfortran-5.dll"
-libgnat8_CATEGORY="Libs"
-libgnat8_SUMMARY="GCC Ada runtime library"
-libgnat8_CONTENTS="usr/bin/cyggnarl-8.dll usr/bin/cyggnat-8.dll"
+libgnat11_CATEGORY="Libs"
+libgnat11_SUMMARY="GCC Ada runtime library"
+libgnat11_CONTENTS="usr/bin/cyggnarl-11.dll usr/bin/cyggnat-11.dll"
 libgomp1_CATEGORY="Libs"
 libgomp1_SUMMARY="GCC OpenMP runtime library"
 libgomp1_CONTENTS="usr/bin/cyggomp-1.dll"
