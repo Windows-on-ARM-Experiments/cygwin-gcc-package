@@ -102,19 +102,6 @@ index 7e8e628b325..a688d4ae24a 100644
            ;;
          esac
  
-diff --git a/gcc/cp/Make-lang.in b/gcc/cp/Make-lang.in
-index 155be74efdb..b750114185c 100644
---- a/gcc/cp/Make-lang.in
-+++ b/gcc/cp/Make-lang.in
-@@ -285,7 +285,7 @@ c++.install-plugin: installdirs
- # Install import library.
- ifeq ($(plugin_implib),yes)
- 	$(mkinstalldirs) $(DESTDIR)$(plugin_resourcesdir)
--	$(INSTALL_DATA) cc1plus$(exeext).a $(DESTDIR)/$(plugin_resourcesdir)/cc1plus$(exeext).a
-+	$(INSTALL_DATA) cc1plus$(exeext).a $(DESTDIR)$(plugin_resourcesdir)/cc1plus$(exeext).a
- endif
- 
- c++.uninstall:
 diff --git a/gcc/jit/Make-lang.in b/gcc/jit/Make-lang.in
 index 2a774d7feb1..6bd882c5ddf 100644
 --- a/gcc/jit/Make-lang.in
